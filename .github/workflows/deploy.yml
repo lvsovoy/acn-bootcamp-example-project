@@ -19,6 +19,8 @@ on:
 jobs:
   build-and-deploy:
     runs-on: self-hosted
+    env:
+      APP_CONTAINER_NAME: acn-bootcamp-app
     
     steps:
     - name: Checkout code
@@ -67,24 +69,36 @@ jobs:
     - name: Build with Maven
       run: mvn clean package -DskipTests
 
+    - name: Check Docker availability
+      run: docker version
+
     - name: Stop existing application (if running)
       continue-on-error: true
-      env:
-        SERVER_PORT: ${{ steps.deployment-info.outputs.server_port }}
       run: |
-        PID=$(lsof -ti:$SERVER_PORT) && kill $PID || true
+        docker rm -f $APP_CONTAINER_NAME || true
         sleep 2
 
-    - name: Start application
+    - name: Start application container
       env:
         SERVER_PORT: ${{ steps.deployment-info.outputs.server_port }}
         DEPLOYMENT_BRANCH: ${{ steps.deployment-info.outputs.branch }}
         DEPLOYMENT_COMMIT: ${{ steps.deployment-info.outputs.commit }}
         DEPLOYMENT_TIMESTAMP: ${{ steps.deployment-info.outputs.timestamp }}
       run: |
-        nohup java -jar target/acn-bootcamp-app-1.0.0.jar > app.log 2>&1 &
+        docker run -d \
+          --name $APP_CONTAINER_NAME \
+          --restart unless-stopped \
+          -p $SERVER_PORT:$SERVER_PORT \
+          -e SERVER_PORT=$SERVER_PORT \
+          -e DEPLOYMENT_BRANCH="$DEPLOYMENT_BRANCH" \
+          -e DEPLOYMENT_COMMIT="$DEPLOYMENT_COMMIT" \
+          -e DEPLOYMENT_TIMESTAMP="$DEPLOYMENT_TIMESTAMP" \
+          -v "$PWD/target:/app" \
+          eclipse-temurin:17-jre \
+          java -jar /app/acn-bootcamp-app-1.0.0.jar
         sleep 5
-        echo "Application started on port $SERVER_PORT"
+        echo "Application container started on port $SERVER_PORT"
+        docker ps --filter "name=$APP_CONTAINER_NAME"
 
     - name: Verify deployment
       env:
@@ -99,9 +113,9 @@ jobs:
           sleep 2
         done
         echo "Failed to start application"
-        cat app.log
+        docker logs $APP_CONTAINER_NAME || true
         exit 1
 
     - name: Display application logs
       if: always()
-      run: tail -20 app.log || true
+      run: docker logs --tail 50 $APP_CONTAINER_NAME || true
