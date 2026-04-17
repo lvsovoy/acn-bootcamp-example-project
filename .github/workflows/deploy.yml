@@ -5,6 +5,16 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      server_port:
+        description: 'Application port'
+        required: false
+        default: '3100'
+      deployment_branch:
+        description: 'Override deployment branch (optional)'
+        required: false
+        default: ''
 
 jobs:
   build-and-deploy:
@@ -27,30 +37,42 @@ jobs:
       id: deployment-info
       run: |
         BRANCH=${GITHUB_REF#refs/heads/}
+        MANUAL_BRANCH="${{ github.event.inputs.deployment_branch }}"
+        if [ -n "$MANUAL_BRANCH" ]; then
+          BRANCH="$MANUAL_BRANCH"
+        fi
         COMMIT=$(git rev-parse --short HEAD)
         TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+        PORT_INPUT="${{ github.event.inputs.server_port }}"
+        if [ -z "$PORT_INPUT" ]; then
+          PORT_INPUT="3100"
+        fi
         
         echo "branch=$BRANCH" >> $GITHUB_OUTPUT
         echo "commit=$COMMIT" >> $GITHUB_OUTPUT
         echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+        echo "server_port=$PORT_INPUT" >> $GITHUB_OUTPUT
         
         echo "Deployment Info:"
         echo "  Branch: $BRANCH"
         echo "  Commit: $COMMIT"
         echo "  Timestamp: $TIMESTAMP"
+        echo "  Port: $PORT_INPUT"
 
     - name: Build with Maven
       run: mvn clean package -DskipTests
 
     - name: Stop existing application (if running)
       continue-on-error: true
+      env:
+        SERVER_PORT: ${{ steps.deployment-info.outputs.server_port }}
       run: |
-        PID=$(lsof -ti:3100) && kill $PID || true
+        PID=$(lsof -ti:$SERVER_PORT) && kill $PID || true
         sleep 2
 
     - name: Start application
       env:
-        SERVER_PORT: ${{ env.SERVER_PORT || '3100' }}
+        SERVER_PORT: ${{ steps.deployment-info.outputs.server_port }}
         DEPLOYMENT_BRANCH: ${{ steps.deployment-info.outputs.branch }}
         DEPLOYMENT_COMMIT: ${{ steps.deployment-info.outputs.commit }}
         DEPLOYMENT_TIMESTAMP: ${{ steps.deployment-info.outputs.timestamp }}
@@ -60,9 +82,11 @@ jobs:
         echo "Application started on port $SERVER_PORT"
 
     - name: Verify deployment
+      env:
+        SERVER_PORT: ${{ steps.deployment-info.outputs.server_port }}
       run: |
         for i in {1..10}; do
-          if curl -f http://localhost:3100/ > /dev/null 2>&1; then
+          if curl -f http://localhost:$SERVER_PORT/ > /dev/null 2>&1; then
             echo "Application is running and healthy"
             exit 0
           fi
