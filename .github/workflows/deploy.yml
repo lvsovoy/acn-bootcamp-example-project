@@ -3,8 +3,6 @@ name: Deploy to Self-Hosted Runner
 on:
   push:
     branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
   workflow_dispatch:
     inputs:
       server_port:
@@ -15,6 +13,10 @@ on:
         description: 'Override deployment branch (optional)'
         required: false
         default: ''
+
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   build-and-deploy:
@@ -127,14 +129,27 @@ jobs:
       env:
         SERVER_PORT: ${{ steps.deployment-info.outputs.server_port }}
       run: |
-        for i in {1..10}; do
-          if curl -f http://localhost:$SERVER_PORT/ > /dev/null 2>&1; then
+        HTTP_CHECK_CMD="curl -fsS"
+        if ! command -v curl > /dev/null 2>&1; then
+          HTTP_CHECK_CMD="wget -qO-"
+        fi
+
+        for i in {1..30}; do
+          if ! docker ps --format '{{.Names}}' | grep -qx "$APP_CONTAINER_NAME"; then
+            echo "Application container is not running"
+            docker logs $APP_CONTAINER_NAME || true
+            exit 1
+          fi
+
+          if $HTTP_CHECK_CMD http://localhost:$SERVER_PORT/ > /dev/null 2>&1; then
             echo "Application is running and healthy"
             exit 0
           fi
+
           echo "Attempt $i: Waiting for application to start..."
           sleep 2
         done
+
         echo "Failed to start application"
         docker logs $APP_CONTAINER_NAME || true
         exit 1
