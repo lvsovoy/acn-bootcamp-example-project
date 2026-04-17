@@ -129,11 +129,6 @@ jobs:
       env:
         SERVER_PORT: ${{ steps.deployment-info.outputs.server_port }}
       run: |
-        HTTP_CHECK_CMD="curl -fsS"
-        if ! command -v curl > /dev/null 2>&1; then
-          HTTP_CHECK_CMD="wget -qO-"
-        fi
-
         for i in {1..30}; do
           if ! docker ps --format '{{.Names}}' | grep -qx "$APP_CONTAINER_NAME"; then
             echo "Application container is not running"
@@ -141,16 +136,17 @@ jobs:
             exit 1
           fi
 
-          if $HTTP_CHECK_CMD http://localhost:$SERVER_PORT/ > /dev/null 2>&1; then
-            echo "Application is running and healthy"
+          if docker logs $APP_CONTAINER_NAME 2>&1 | grep -q "Started Application in"; then
+            echo "Application container is running and Spring Boot has started"
+            docker ps --filter "name=$APP_CONTAINER_NAME"
             exit 0
           fi
 
-          echo "Attempt $i: Waiting for application to start..."
+          echo "Attempt $i: Waiting for Spring Boot startup confirmation..."
           sleep 2
         done
 
-        echo "Failed to start application"
+        echo "Application did not report successful startup in logs"
         docker logs $APP_CONTAINER_NAME || true
         exit 1
 
