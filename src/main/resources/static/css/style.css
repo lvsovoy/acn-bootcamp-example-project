@@ -63,6 +63,51 @@ main {
     font-size: 1.05em;
 }
 
+.message-form {
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.message-form label {
+    font-weight: 600;
+    color: #444;
+}
+
+.message-form textarea {
+    width: 100%;
+    resize: vertical;
+    border: 1px solid #c9cfdd;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #333;
+}
+
+.message-form textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18);
+}
+
+.message-form button {
+    align-self: flex-start;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.message-form button:hover {
+    filter: brightness(1.05);
+}
+
 footer {
     background: #f8f9fa;
     border-top: 2px solid #e9ecef;

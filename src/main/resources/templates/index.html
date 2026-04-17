@@ -18,6 +18,12 @@
                 <h2>Hello, World! 👋</h2>
                 <p>This is a simple Spring Boot application with Thymeleaf templating.</p>
                 <p>The application is configured to run on port <strong>3100</strong> (customizable via environment variables).</p>
+
+                <form class="message-form" th:action="@{/message}" method="post">
+                    <label for="message">Enter a message to log</label>
+                    <textarea id="message" name="message" rows="5" placeholder="Type your message here..." required></textarea>
+                    <button type="submit">Submit Message</button>
+                </form>
             </div>
         </main>
 
