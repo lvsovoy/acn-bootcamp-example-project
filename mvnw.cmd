@@ -18,7 +18,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-set MAVEN_URL=https://repo.maven.apache.org/maven2/org/apache/maven/maven/3.9.6/maven-3.9.6-bin.zip
+set MAVEN_URL=https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.6/apache-maven-3.9.6-bin.zip
 if "%MAVEN_HOME%"=="" set MAVEN_HOME=.\.maven
 set MAVEN_BIN=%MAVEN_HOME%\bin\mvn.cmd
 
@@ -29,8 +29,8 @@ if not exist "%MAVEN_BIN%" (
     cd /d "%MAVEN_HOME%"
     powershell -Command "(New-Object Net.WebClient).DownloadFile('%MAVEN_URL%', 'maven.zip')"
     powershell -Command "Expand-Archive 'maven.zip' -DestinationPath . -Force"
-    powershell -Command "Move-Item -Path 'maven-3.9.6\*' -Destination . -Force"
-    powershell -Command "Remove-Item 'maven-3.9.6' -Force"
+    powershell -Command "Move-Item -Path 'apache-maven-3.9.6\*' -Destination . -Force"
+    powershell -Command "Remove-Item 'apache-maven-3.9.6' -Force"
     del /f /q maven.zip
     cd /d "%~dp0"
 )

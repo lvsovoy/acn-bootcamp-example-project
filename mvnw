@@ -21,7 +21,7 @@
 
 set -e
 
-MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/maven/3.9.6/maven-3.9.6-bin.tar.gz"
+MAVEN_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.6/apache-maven-3.9.6-bin.tar.gz"
 MAVEN_HOME="${MAVEN_HOME:-.maven}"
 MAVEN_BIN="${MAVEN_HOME}/bin/mvn"
 
