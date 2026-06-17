@@ -24,6 +24,9 @@ public class HelloController {
     @Value("${app.deployment.timestamp:unknown}")
     private String deploymentTimestamp;
 
+    @Value("${server.port:3100}")
+    private String serverPort;
+
     @GetMapping("/")
     public String index(Model model) {
         DeploymentInfo deploymentInfo = new DeploymentInfo(
@@ -32,6 +35,7 @@ public class HelloController {
             deploymentTimestamp
         );
         model.addAttribute("deploymentInfo", deploymentInfo);
+        model.addAttribute("serverPort", serverPort);
         return "index";
     }
 
