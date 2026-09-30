@@ -46,23 +46,26 @@ jobs:
     - name: Extract deployment information
       id: deployment-info
       run: |
-        BRANCH=${GITHUB_REF#refs/heads/}
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+        BRANCH="${GITHUB_REF_NAME:-${GITHUB_REF#refs/heads/}}"
         MANUAL_BRANCH="${{ github.event.inputs.deployment_branch }}"
         if [ -n "$MANUAL_BRANCH" ]; then
           BRANCH="$MANUAL_BRANCH"
         fi
-        COMMIT=$(git rev-parse --short HEAD)
+
+        COMMIT="${GITHUB_SHA::7}"
         TIMESTAMP=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
         PORT_INPUT="${{ github.event.inputs.server_port }}"
         if [ -z "$PORT_INPUT" ]; then
           PORT_INPUT="3100"
         fi
-        
-        echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-        echo "commit=$COMMIT" >> $GITHUB_OUTPUT
-        echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
-        echo "server_port=$PORT_INPUT" >> $GITHUB_OUTPUT
-        
+
+        echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+        echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+        echo "timestamp=$TIMESTAMP" >> "$GITHUB_OUTPUT"
+        echo "server_port=$PORT_INPUT" >> "$GITHUB_OUTPUT"
+
         echo "Deployment Info:"
         echo "  Branch: $BRANCH"
         echo "  Commit: $COMMIT"
